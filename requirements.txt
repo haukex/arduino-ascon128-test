@@ -1,0 +1,2 @@
+pyserial == 3.5
+ascon == 0.0.9
