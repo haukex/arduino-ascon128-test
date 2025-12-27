@@ -80,7 +80,7 @@ void loop() {
    * a bit of RAM because we only need one 16 byte and one 20 byte buffer. */
   const size_t CRYPT_BUF_SZ = 16;
   static uint8_t crypt_buf[CRYPT_BUF_SZ];
-  const size_t slen = strlen(buffer);  // is safe because we explicitly NUL-terminate above
+  const size_t slen = strlen((const char*)buffer);  // is safe because we explicitly NUL-terminate above
   for(size_t pos=0; pos<slen; pos+=CRYPT_BUF_SZ) {
     const uint8_t sz = pos+CRYPT_BUF_SZ<slen ? CRYPT_BUF_SZ : slen-pos;
     /* Pad data with NUL bytes that the receiver can strip - this obviously means that

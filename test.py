@@ -25,7 +25,7 @@ TESTS = (
     # spell: enable
 )
 
-with serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=5) as ser:
+with serial.Serial(port='COM29', baudrate=115200, timeout=5) as ser:
     print("Waiting for boot...")
     time.sleep(2)  # not sure why this is required but it is (Arduino resets?)
     seen_iv: set[bytes] = set()
