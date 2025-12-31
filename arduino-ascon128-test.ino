@@ -53,12 +53,7 @@ void z85_test(const uint8_t* buffer, const size_t len) {
 /* ********** ********** ********** ********** Ascon-128 ********** ********** ********** ********** */
 
 /* https://rweather.github.io/arduinolibs/classAscon128.html
- * Install "Crypto by Rhys Weatherley 0.4.0", though unfortunately that doesn't seem to include the following:
- * wget https://github.com/rweather/arduinolibs/raw/refs/heads/master/libraries/CryptoLW/src/Ascon128.cpp
- * wget https://github.com/rweather/arduinolibs/raw/refs/heads/master/libraries/CryptoLW/src/Ascon128.h
- * wget https://github.com/rweather/arduinolibs/raw/refs/heads/master/libraries/CryptoLW/src/Ascon128AVR.cpp
- * (could probably also get the CryptoLW lib from GH and install that;
- * hint `arduino-cli config set library.enable_unsafe_install true`)
+ * see the `install-deps.sh` script for installation
  */
 #include "Ascon128.h"
 
