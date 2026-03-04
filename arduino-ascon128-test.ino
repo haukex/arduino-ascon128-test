@@ -53,7 +53,7 @@ void z85_test(const uint8_t* buffer, const size_t len) {
 /* ********** ********** ********** ********** Ascon-128 ********** ********** ********** ********** */
 
 /* https://rweather.github.io/arduinolibs/classAscon128.html
- * see the `install-deps.sh` script for installation
+ * see the `install_deps.py` script for installation
  */
 #include "Ascon128.h"
 
