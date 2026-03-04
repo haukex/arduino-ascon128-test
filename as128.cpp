@@ -1,7 +1,7 @@
 #include "as128.hpp"
 #include "z85.hpp"
 
-// This implementation is tested against Python's `ascon` via `test.py` in this repository.
+// These implementations are tested against Python's `ascon` via `test.py` in this repository.
 
 /* https://rweather.github.io/arduinolibs/classAscon128.html
  * see the `install_deps.py` script in this repo for installation */
@@ -26,4 +26,13 @@ void as128_encrypt_print_z85(Print& out, const uint8_t secret[16], const uint8_t
   cipher.computeTag(crypt_buf, 16);  // tag size is always 16
   z85_print(out, crypt_buf, 16);
   cipher.clear();
+}
+
+bool as128_decrypt(const uint8_t secret[16], uint8_t* buffer, const size_t len, uint8_t* output) {
+  if (len<32) return false;
+  cipher.setKey(secret, 16);  // key size is always 16
+  cipher.setIV(buffer, 16);   // IV size is always 16
+  cipher.addAuthData(buffer, 16);  // assume buffer starts with IV as additional data
+  cipher.decrypt(output, buffer+16, len-32);
+  return cipher.checkTag(buffer+len-16, 16);  // assume buffer ends with tag
 }

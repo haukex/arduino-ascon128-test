@@ -7,7 +7,7 @@ int8_t _hex_nib2int(uint8_t c) {
   return -1;
 }
 
-// This implementation is tested as part of the Z85 test in this repository.
+// This implementation is tested as part of the Z85 and Ascon-128 decryption tests in this repository.
 
 bool hex_decode(uint8_t* buffer, const size_t len) {
   if (len%2) return false;
@@ -19,4 +19,17 @@ bool hex_decode(uint8_t* buffer, const size_t len) {
     buffer[i/2] = (upper << 4) | lower;
   }
   return true;
+}
+
+// This implementation is tested as part of the Ascon-128 decryption test in this repository.
+
+static const uint8_t _hex_tbl[] = "0123456789abcdef";
+
+void hex_encode(uint8_t* buffer, const size_t len) {
+  for (size_t i=len-1; ; i--) {
+    uint8_t b = buffer[i];
+    buffer[i*2] = _hex_tbl[(b >> 4) & 0xF];
+    buffer[i*2+1] = _hex_tbl[b & 0xF];
+    if (!i) break;
+  }
 }
