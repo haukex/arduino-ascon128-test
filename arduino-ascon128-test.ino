@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "z85.hpp"
+#include "as128.hpp"
 
 /* ********** ********** z85_test ********** ********** */
 
@@ -26,46 +27,11 @@ void z85_test(const uint8_t* buffer, const size_t len) {
 
 /* ********** ********** ********** ********** Ascon-128 ********** ********** ********** ********** */
 
-/* https://rweather.github.io/arduinolibs/classAscon128.html
- * see the `install_deps.py` script for installation
- */
-#include "Ascon128.h"
-
-/* ********** ********** IV ********** ********** */
-
-// Arduino is little-endian so this works:
-typedef struct { uint64_t lsb; uint64_t msb; } uint128_t;
-typedef union  { uint128_t i; uint8_t b[16]; } uint128buf_t;
-/* Arduino quirk: b/c uint128_t is used as a function argument here,
- * I need to include the function prototype after the typedef. */
-inline uint128_t& operator++(uint128_t& x);
-inline uint128_t& operator++(uint128_t& x) { if (!(++x.lsb)) x.msb++; return x; }
-
-/* ********** ********** crypt_test ********** ********** */
-
-void crypt_test(const uint8_t* buffer, const size_t len) {
-  static Ascon128 cipher = Ascon128();
+void as128_test(const uint8_t* buffer, const size_t len) {
   static uint128buf_t iv = { .i = {0, 0} };
-  // note .setKey also resets internal state
-  cipher.setKey((const uint8_t*)"Super Secret! :)", 16);  // key size is always 16
   // Note: In theory, could also use `const uint32_t m = millis()` for IV - wraps after ~49.7 days (!)
-  cipher.setIV(iv.b, 16);  // IV size is always 16
-  cipher.addAuthData(iv.b, 16);
-  // IV can be decoded in Python by `int.from_bytes(z85decode(buf[:20]), byteorder='little')`
-  z85_print(Serial, iv.b, 16);
+  as128_print_z85(Serial, (const uint8_t*)"Super Secret! :)", iv.b, buffer, len);
   ++iv.i;
-
-  // Encrypt in blocks of 16 bytes because then we can use the same buffer for the tag too.
-  const size_t CRYPT_BUF_SZ = 16;
-  static uint8_t crypt_buf[CRYPT_BUF_SZ];
-  for(size_t pos=0; pos<len; pos+=CRYPT_BUF_SZ) {
-    const uint8_t left = pos+CRYPT_BUF_SZ<len ? CRYPT_BUF_SZ : len-pos;
-    cipher.encrypt(crypt_buf, &buffer[pos], left);
-    z85_print(Serial, crypt_buf, left);
-  }
-  cipher.computeTag(crypt_buf, 16);  // tag size is always 16
-  z85_print(Serial, crypt_buf, 16);
-  cipher.clear();
   Serial.write('\n');
 }
 
@@ -87,7 +53,7 @@ void loop() {
 
   switch(buffer[0]) {
     case 'c':
-      crypt_test(buffer+1, buf_len-1);
+      as128_test(buffer+1, buf_len-1);
       break;
     case 'z':
       z85_test(buffer+1, buf_len-1);
