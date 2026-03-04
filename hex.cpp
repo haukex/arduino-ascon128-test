@@ -7,6 +7,8 @@ int8_t _hex_nib2int(uint8_t c) {
   return -1;
 }
 
+// This implementation is tested as part of the Z85 test in this repository.
+
 bool hex_decode(uint8_t* buffer, const size_t len) {
   if (len%2) return false;
   for (size_t i=0; i<len; i+=2) {

@@ -1,6 +1,8 @@
 #include "as128.hpp"
 #include "z85.hpp"
 
+// This implementation is tested against Python's `ascon` via `test.py` in this repository.
+
 /* https://rweather.github.io/arduinolibs/classAscon128.html
  * see the `install_deps.py` script in this repo for installation */
 #include <Ascon128.h>

@@ -1,12 +1,12 @@
 #include "z85.hpp"
 
+// This implementation is tested against Python's `base64.z85encode` via `test.py` in this repository.
+
 static const uint8_t _z85_tbl[] = "0123456789abcdefghijklmnopqrstuvwxyz"
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
 
 /** Write a byte array to the specified stream using the Z85 encoding, with the extension
  * that, as opposed to the specification, buffers of any length can be encoded.
- *
- * This implementation is tested against Python's `base64.z85encode` via `test.py` in this repository.
  *
  * References:
  * - https://rfc.zeromq.org/spec/32/
@@ -15,7 +15,7 @@ static const uint8_t _z85_tbl[] = "0123456789abcdefghijklmnopqrstuvwxyz"
 void z85_print(Print &out, const uint8_t* buffer, const size_t len) {
   for (size_t pos=0; pos<len; pos+=4) {
     const uint8_t left = pos+4<len ? 4 : len-pos;
-    uint32_t n = 0;  // treat the rest of the bytes as 0!
+    uint32_t n = 0;  // If left<4, treat the rest of the bytes as 0!
     memcpy(&n, &buffer[pos], left);
     n = __builtin_bswap32(n);  // Arduino is little-endian, Z85 uses big-endian
                 out.write(_z85_tbl[(n / 52200625) % 85]);
