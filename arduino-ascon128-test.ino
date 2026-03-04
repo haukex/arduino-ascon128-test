@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "hex.hpp"
 #include "z85.hpp"
+#include "uint128.hpp"
 #include "as128.hpp"
 
 /* ********** ********** z85_test ********** ********** */
@@ -18,11 +19,14 @@ void z85_test(uint8_t* buffer, const size_t len) {
 /* ********** ********** ********** ********** Ascon-128 ********** ********** ********** ********** */
 
 void as128_test(const uint8_t* buffer, const size_t len) {
-  static uint128buf_t iv = { .i = {0, 0} };
+  static uint128_t iv = {0, 0};
+  static uint8_t iv_buf[16];
+  memcpy(iv_buf, &iv, 16);
+  iv++;
   // Note: In theory, could also use `const uint32_t m = millis()` for IV - wraps after ~49.7 days (!)
-  as128_print_z85(Serial, (const uint8_t*)"Super Secret! :)", iv.b, buffer, len);
-  ++iv.i;
+  as128_encrypt_print_z85(Serial, (const uint8_t*)"Super Secret! :)", iv_buf, buffer, len);
   Serial.write('\n');
+  // IV can be decoded in Python by `int.from_bytes(z85decode(buf[:20]), byteorder='little')`
 }
 
 /* ********** ********** ********** ********** Main ********** ********** ********** ********** */

@@ -7,7 +7,7 @@
 
 static Ascon128 cipher;
 
-void as128_print_z85(Print& out, const uint8_t secret[16], const uint8_t iv[16], const uint8_t* buffer, const size_t len) {
+void as128_encrypt_print_z85(Print& out, const uint8_t secret[16], const uint8_t iv[16], const uint8_t* buffer, const size_t len) {
   // note .setKey also resets internal state
   cipher.setKey(secret, 16);  // key size is always 16
   cipher.setIV(iv, 16);       // IV size is always 16
