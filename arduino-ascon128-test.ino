@@ -1,27 +1,17 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include "hex.hpp"
 #include "z85.hpp"
 #include "as128.hpp"
 
 /* ********** ********** z85_test ********** ********** */
 
-uint8_t hex_chr(uint8_t c) {
-  if (c >= '0' && c <= '9') return c - '0';
-  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-  return 0;
-}
-
-void z85_test(const uint8_t* buffer, const size_t len) {
-  const size_t BUF_SZ = 16;
-  if (len%2 || len>BUF_SZ*2) {
-    Serial.println("Bad length");
+void z85_test(uint8_t* buffer, const size_t len) {
+  if (!hex_decode(buffer, len)) {
+    Serial.println("Hex decode failed");
     return;
   }
-  static uint8_t data[BUF_SZ];
-  for (size_t i=0; i<len; i+=2)
-    data[i/2] = (hex_chr(buffer[i]) << 4) | hex_chr(buffer[i+1]);
-  z85_print(Serial, data, len/2);
+  z85_print(Serial, buffer, len/2);
   Serial.write('\n');
 }
 

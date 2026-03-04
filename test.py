@@ -60,7 +60,7 @@ def do_crypt_test(ser: serial.Serial):
             print(f"    {enc[:-16]!r} tag={enc[-16:]!r}")
             print(f"{got=} {tag=}")
             print(f"{out=}")
-            raise RuntimeError(f"{out=} != {t=}")
+            raise RuntimeError(f"{t=} != {out=}")
         print(f"OK {t.decode('CP1252')} {rx.decode('ASCII')}")
 
 
@@ -74,7 +74,7 @@ def do_z85_test(ser: serial.Serial):
             rx = ser.readline().rstrip(b'\r\n')
             exp = z85encode(t)
             if rx != exp:
-                raise RuntimeError(f"{rx=} != {exp=}")
+                raise RuntimeError(f"{t=}: {rx=} != {exp=}")
             print(f"OK {t.hex()} {rx.decode('ASCII')}")
 
 

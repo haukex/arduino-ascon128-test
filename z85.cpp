@@ -15,6 +15,7 @@ static const uint8_t _z85_tbl[] = "0123456789abcdefghijklmnopqrstuvwxyz"
 void z85_print(Print &out, const uint8_t* buffer, const size_t len) {
   for (size_t pos=0; pos<len; pos+=4) {
     const uint8_t left = pos+4<len ? 4 : len-pos;
+    //TODO: if left<4, we need to mask the remaining bytes of `buffer`!
     uint32_t n = __builtin_bswap32(*(uint32_t*)&buffer[pos]);  // Arduino is little-endian, Z85 uses big-endian
                 out.write(_z85_tbl[(n / 52200625) % 85]);
                 out.write(_z85_tbl[(n / 614125  ) % 85]);
