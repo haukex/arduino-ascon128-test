@@ -1,32 +1,6 @@
-
 #include <stdlib.h>
 #include <stdint.h>
-
-/* ********** ********** ********** ********** Z85 ********** ********** ********** ********** */
-
-static const uint8_t _z85_tbl[] = "0123456789abcdefghijklmnopqrstuvwxyz"
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
-
-/** Write a byte array to the specified stream using the Z85 encoding, with the extension
- * that, as opposed to the specification, buffers of any length can be encoded.
- *
- * This implementation is tested against Python's `base64.z85encode` via `test.py` in this repository.
- *
- * References:
- * - https://rfc.zeromq.org/spec/32/
- * - https://github.com/zeromq/rfc/blob/master/src/spec_32.c
- */
-void print_z85(Print &out, const uint8_t* buffer, const size_t len) {
-  for (size_t pos=0; pos<len; pos+=4) {
-    const uint8_t left = pos+4<len ? 4 : len-pos;
-    uint32_t n = __builtin_bswap32(*(uint32_t*)&buffer[pos]);  // Arduino is little-endian, Z85 uses big-endian
-                out.write(_z85_tbl[(n / 52200625) % 85]);
-                out.write(_z85_tbl[(n / 614125  ) % 85]);
-    if (left>1) out.write(_z85_tbl[(n / 7225    ) % 85]);
-    if (left>2) out.write(_z85_tbl[(n / 85      ) % 85]);
-    if (left>3) out.write(_z85_tbl[ n             % 85]);
-  }
-}
+#include "z85.hpp"
 
 /* ********** ********** z85_test ********** ********** */
 
@@ -46,7 +20,7 @@ void z85_test(const uint8_t* buffer, const size_t len) {
   static uint8_t data[BUF_SZ];
   for (size_t i=0; i<len; i+=2)
     data[i/2] = (hex_chr(buffer[i]) << 4) | hex_chr(buffer[i+1]);
-  print_z85(Serial, data, len/2);
+  z85_print(Serial, data, len/2);
   Serial.write('\n');
 }
 
@@ -78,7 +52,7 @@ void crypt_test(const uint8_t* buffer, const size_t len) {
   cipher.setIV(iv.b, 16);  // IV size is always 16
   cipher.addAuthData(iv.b, 16);
   // IV can be decoded in Python by `int.from_bytes(z85decode(buf[:20]), byteorder='little')`
-  print_z85(Serial, iv.b, 16);
+  z85_print(Serial, iv.b, 16);
   ++iv.i;
 
   // Encrypt in blocks of 16 bytes because then we can use the same buffer for the tag too.
@@ -87,10 +61,10 @@ void crypt_test(const uint8_t* buffer, const size_t len) {
   for(size_t pos=0; pos<len; pos+=CRYPT_BUF_SZ) {
     const uint8_t left = pos+CRYPT_BUF_SZ<len ? CRYPT_BUF_SZ : len-pos;
     cipher.encrypt(crypt_buf, &buffer[pos], left);
-    print_z85(Serial, crypt_buf, left);
+    z85_print(Serial, crypt_buf, left);
   }
   cipher.computeTag(crypt_buf, 16);  // tag size is always 16
-  print_z85(Serial, crypt_buf, 16);
+  z85_print(Serial, crypt_buf, 16);
   cipher.clear();
   Serial.write('\n');
 }
