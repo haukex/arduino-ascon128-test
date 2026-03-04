@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # pylint: disable=missing-function-docstring
 """Test of Ascon-128 on Arduino."""
+import argparse
 from itertools import product
 from base64 import z85encode, z85decode
 # https://github.com/pyserial/pyserial
@@ -115,8 +116,10 @@ def do_decrypt_test(ser: serial.Serial):
 
 
 def main():
-    with serial.Serial(
-            port='COM29', baudrate=115200, timeout=5) as ser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('port', help="The serial port to use")
+    args = parser.parse_args()
+    with serial.Serial(port=args.port, baudrate=115200, timeout=5) as ser:
         print("Waiting for boot...")
         if not ser.read_until(b'Ready\r\n').endswith(b'Ready\r\n'):
             raise RuntimeError('Failed to get "Ready" from Arduino')
