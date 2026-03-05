@@ -28,61 +28,7 @@ def do_z85_test(ser: serial.Serial):
 
 CRYPT_KEY = b'Super Secret! :)'  # must be 16 bytes
 
-_prev_iv: int = -1
-
-ENCRYPT_TESTS = (
-    b'',
-    b'a',
-    b'ab',
-    b'abc',
-    b'abcd',
-    b'\x00\x09\x0d\x18\x7F\x8A\xFF',  # can't include \x0a here
-    b'Hello, World! ab',  # 16 bytes
-    b'Hello, World! This is a test.',
-    # spell: disable
-    b'Lorem ipsum dolor sit amet, consectetur adipiscing elit sapien.',
-    # 126+\n+\0:
-    b'Lorem ipsum dolor sit amet, consectetur \xE4dipiscing elit. Pellentesque'
-    b' mi magna, pulvinar non \xEEpsum eget, finibus \xE6lquet metus.',
-    # spell: enable
-)
-
-
-def do_encrypt_test(ser: serial.Serial):
-    for t in ENCRYPT_TESTS:
-        # Send
-        ser.write(b'c' + t + b'\n')
-        # Receive
-        rx = ser.readline().rstrip(b'\r\n')
-        # Split
-        if len(rx) < 40:
-            raise ValueError(f"data too short: {rx!r}")
-        iv = z85decode(rx[:20])
-        got = z85decode(rx[20:-20])
-        tag = z85decode(rx[-20:])
-        # Check IV
-        ivn = int.from_bytes(iv, byteorder='little')
-        global _prev_iv  # pylint: disable=global-statement
-        if ivn <= _prev_iv:
-            raise ValueError(f"IV repeated: {iv!r}")
-        _prev_iv = ivn
-        # Decrypt
-        out = ascon.decrypt(CRYPT_KEY, iv, iv, got+tag)
-        if out != t:  # mismatch
-            print(f"##### {t!r} #####")
-            print(f" {rx=} iv={ivn!r}")
-            # Show expected encryption result
-            enc = ascon.encrypt(CRYPT_KEY, iv, iv, t)
-            exp = z85encode(iv) + z85encode(enc[:-16]) + z85encode(enc[-16:])
-            print(f"{exp=}")
-            print(f"    {enc[:-16]!r} tag={enc[-16:]!r}")
-            print(f"{got=} {tag=}")
-            print(f"{out=}")
-            raise RuntimeError(f"{t=} != {out=}")
-        print(f"OK {t.decode('CP1252')!r} {rx.decode('ASCII')}")
-
-
-DECRYPT_TESTS = (
+CRYPT_TESTS = (
     b'',
     b'a',
     b'ab',
@@ -92,16 +38,62 @@ DECRYPT_TESTS = (
     b'Hello, World! ab',  # 16 bytes
     b'Hello, World! This is a test.',
     # spell: disable
-    # sending hex encoded: 63 bytes * 2 + IV and tag as 64 bytes = 190 bytes
-    b'Lorem ipsum dolor sit \xE6met, consectetur \xE4dipiscing el\xEEt '
-    b'sapien.',
+    b'Lorem ipsum dolor sit amet, consectetur adipiscing elit sapien.',  # 63
+    # decrypt test: 126*2 + IV as hex 32 + tag as hex 32 +\n+\0 = 318 buffer
+    b'Lorem ipsum dolor sit amet, consectetur \xE4dipiscing elit. Pellentesque'
+    b' mi magna, pulvinar non \xEEpsum eget, finibus \xE6lquet metus.',  # 126
     # spell: enable
 )
 
+_prev_iv: int = -1
+
+
+def _check_enc(t: bytes, rx: bytes, iv: bytes, got: bytes, tag: bytes):
+    global _prev_iv  # pylint: disable=global-statement
+    # Check IV
+    ivn = int.from_bytes(iv, byteorder='little')
+    if ivn <= _prev_iv:
+        raise ValueError(f"IV repeated: {iv!r}")
+    _prev_iv = ivn
+    # Decrypt
+    out = ascon.decrypt(CRYPT_KEY, iv, iv, got+tag)
+    if out != t:  # mismatch
+        print(f"##### {t!r} #####")
+        print(f" {rx=} iv={ivn!r}")
+        # Show expected encryption result
+        enc = ascon.encrypt(CRYPT_KEY, iv, iv, t)
+        exp = z85encode(iv) + z85encode(enc[:-16]) + z85encode(enc[-16:])
+        print(f"{exp=}")
+        print(f"    {enc[:-16]!r} tag={enc[-16:]!r}")
+        print(f"{got=} {tag=}")
+        print(f"{out=}")
+        raise RuntimeError(f"{t=} != {out=}")
+    print(f"OK {t.decode('CP1252')!r} {rx.decode('ASCII')}")
+
+
+def do_encrypt_test(ser: serial.Serial):
+    for t in CRYPT_TESTS:
+        ser.write(b'e' + t.hex().encode('ASCII') + b'\n')
+        rx = ser.readline().rstrip(b'\r\n')
+        if len(rx) < 64:
+            raise ValueError(f"data too short: {rx!r}")
+        _check_enc(t, rx, bytes.fromhex(rx[:32]), bytes.fromhex(rx[32:-32]),
+                   bytes.fromhex(rx[-32:]))
+
+
+def do_encrypt_z85_test(ser: serial.Serial):
+    for t in CRYPT_TESTS:
+        ser.write(b'c' + t.hex().encode('ASCII') + b'\n')
+        rx = ser.readline().rstrip(b'\r\n')
+        if len(rx) < 40:
+            raise ValueError(f"data too short: {rx!r}")
+        _check_enc(t, rx, z85decode(rx[:20]), z85decode(rx[20:-20]),
+                   z85decode(rx[-20:]))
+
 
 def do_decrypt_test(ser: serial.Serial):
-    for t in DECRYPT_TESTS:
-        global _prev_iv  # pylint: disable=global-statement
+    global _prev_iv  # pylint: disable=global-statement
+    for t in CRYPT_TESTS:
         _prev_iv += 1
         iv = _prev_iv.to_bytes(16, byteorder='little')
         enc = iv + ascon.encrypt(CRYPT_KEY, iv, iv, t)
@@ -109,7 +101,7 @@ def do_decrypt_test(ser: serial.Serial):
         ser.write(b'd' + enc.hex().encode('ASCII') + b'\n')
         # Receive
         rx = ser.readline().rstrip(b'\r\n')
-        exp = f"{iv.hex()} {t.hex()}".encode('ASCII')
+        exp = (iv+t).hex().encode('ASCII')
         if rx != exp:
             raise RuntimeError(f"{t=}: {rx=} != {exp=}")
         print(f"OK {t.decode('CP1252')!r} {enc.hex()}")
@@ -125,6 +117,7 @@ def main():
             raise RuntimeError('Failed to get "Ready" from Arduino')
         do_z85_test(ser)
         do_encrypt_test(ser)
+        do_encrypt_z85_test(ser)
         do_decrypt_test(ser)
 
 

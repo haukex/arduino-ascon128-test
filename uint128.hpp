@@ -7,6 +7,7 @@
 
 // Arduino is little-endian so this struct works when using memcpy to a 16-byte buffer:
 typedef struct { uint64_t lsb; uint64_t msb; } uint128_t;
+// The memcpy-ed buffer can be decoded in Python by `int.from_bytes(buf16, byteorder='little')`
 
 inline uint128_t& operator++(uint128_t& x)  // preincrement
   { if (!(++x.lsb)) x.msb++; return x; } 

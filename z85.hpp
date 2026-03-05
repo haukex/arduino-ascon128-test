@@ -10,4 +10,4 @@
  * - https://rfc.zeromq.org/spec/32/
  * - https://github.com/zeromq/rfc/blob/master/src/spec_32.c
  */
-void z85_print(Print &out, const uint8_t* buffer, const size_t len);
+void z85_print(Print &out, const uint8_t* buffer, size_t len);

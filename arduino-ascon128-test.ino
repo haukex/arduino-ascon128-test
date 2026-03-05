@@ -1,71 +1,99 @@
-#include <stdlib.h>
-#include <stdint.h>
 #include "hex.hpp"
 #include "z85.hpp"
-#include "uint128.hpp"
 #include "as128.hpp"
+#include "uint128.hpp"
+#include "as128z85.hpp"
 
-const size_t MAIN_BUF_SZ = 256;
+/* Analyzing memory usage on AVR:
+ * - In the Arduino IDE, Sketch -> Export Compiled Binary
+ *   (ELF file gets written to "build" folder in sketch directory)
+ * - Locate the avr-* tools:
+ *   - Windows: ~/AppData/Local/Arduino15/packages/arduino/tools/avr-gcc/<VERSION>/bin
+ *   - Linux: ~/.arduino15/packages/arduino/tools/avr-gcc/<VERSION>/bin/
+ * - `avr-size -C <FILE>.elf` - just shows the numbers that the GUI shows too
+ * - `avr-nm -S -C -l --format=sysv --size-sort -td <FILE>.elf | grep -E '\.(data|bss|noinit)'`
+ * - `avr-objdump -Cwt -j.bss -j.data -j.noinit <FILE>.elf`
+ *   - `| perl -wM5.014 -Mvars='$x' -nle '/\.[a-z]+\h+([0-9a-f]+)\h+/i and $x+=hex($1)}{print $x'`
+ *
+ * (Though both of the latter don't exactly reach the numbers that `avr-size` does.)
+ *
+ * An analysis of this code reveals that, other than the variables that can be seen throughout the
+ * code, two other major contributors to the RAM usage are Serial with 157 bytes and RNG from the
+ * Crypto module with 148 bytes - though I haven't yet been able to trace why the latter is needed.
+ */
 
-/* ********** ********** z85_test ********** ********** */
+const size_t MAIN_BUF_SZ = 320;
 
-void z85_test(uint8_t* buffer, const size_t len) {
-  if (!hex_decode(buffer, len)) {
-    Serial.println("Hex decode failed");
-    return;
-  }
-  z85_print(Serial, buffer, len/2);
+/* ********** ********** Z85 Test ********** ********** */
+
+void z85_test(const uint8_t* buffer, const size_t len) {
+  z85_print(Serial, buffer, len);
   Serial.write('\n');
 }
 
-/* ********** ********** ********** ********** Ascon-128 ********** ********** ********** ********** */
+/* ********** ********** ********** ********** Ascon-128 Tests ********** ********** ********** ********** */
 
-const uint8_t* secret = (uint8_t*)"Super Secret! :)";
+const uint8_t* SECRET = (uint8_t*)"Super Secret! :)";
 
-void as128_enc_test(const uint8_t* buffer, const size_t len) {
+// Note: In theory, could maybe use `const uint32_t m = millis()` for IV in some cases? Wraps after ~49.7 days!
+/** Returns a new IV. */
+const uint8_t* next_iv() {
   static uint128_t iv = {0, 0};
-  static uint8_t iv_buf[16];
-  memcpy(iv_buf, &iv, 16);
+  static uint8_t ivb[16];
+  memcpy(ivb, &iv, 16);
   iv++;
-  // Note: In theory, could also use `const uint32_t m = millis()` for IV - wraps after ~49.7 days (!)
-  as128_encrypt_print_z85(Serial, secret, iv_buf, buffer, len);
-  Serial.write('\n');
-  // IV can be decoded in Python by `int.from_bytes(z85decode(buf[:20]), byteorder='little')`
+  return ivb;
 }
 
-void as128_dec_test(uint8_t* buffer, const size_t len) {
-  if (!hex_decode(buffer, len)) {
-    Serial.println("Hex decode failed");
-    return;
-  }
-  const size_t BUF_SZ = MAIN_BUF_SZ/2-32;
-  static uint8_t plain[BUF_SZ];
-  if (!as128_decrypt(secret, buffer, len/2, plain)) {
-    Serial.println("Decrypt failed");
-    return;
-  }
-  // write results out as hex
+void as128_enc_z85_test(const uint8_t* buffer, const size_t len) {
+  as128_encrypt_print_z85(Serial, SECRET, next_iv(), buffer, len);
+  Serial.write('\n');
+}
+
+const size_t BUF2_SZ = MAIN_BUF_SZ/2-16;
+static uint8_t buf2[BUF2_SZ];
+
+void _write_buf2(const uint8_t iv[16], const size_t len) {
   static uint8_t out_buf[32];
-  memcpy(out_buf, buffer, 16);  // first the IV
+  memcpy(out_buf, iv, 16);  // first the IV
   hex_encode(out_buf, 16);
   Serial.write(out_buf, 32);
-  Serial.print(' ');
-  // then the plaintext
-  const size_t p_len = len/2 - 32;  // length of plaintext
-  for(size_t pos=0; pos<p_len; pos+=16) {
-    const uint8_t left = pos+16<p_len ? 16 : p_len-pos;
-    memcpy(out_buf, &plain[pos], left);
+  for(size_t pos=0; pos<len; pos+=16) {
+    const uint8_t left = pos+16<len ? 16 : len-pos;
+    memcpy(out_buf, &buf2[pos], left);
     hex_encode(out_buf, left);
     Serial.write(out_buf, left*2);
   }
   Serial.println();
 }
 
+void as128_enc_test(const uint8_t* buffer, const size_t len) {
+  if (len+16 > BUF2_SZ) {
+    Serial.println(F("Not enough memory?"));
+    return;
+  }
+  const uint8_t* iv_buf = next_iv();
+  as128_encrypt(SECRET, iv_buf, buffer, len, buf2);
+  _write_buf2(iv_buf, len+16);
+}
+
+void as128_dec_test(const uint8_t* buffer, const size_t len) {
+  if (len-32 > BUF2_SZ) {
+    Serial.println(F("Not enough memory?"));
+    return;
+  }
+  if (!as128_decrypt(SECRET, buffer, len, buf2)) {
+    Serial.println(F("Decrypt failed"));
+    return;
+  }
+  _write_buf2(buffer, len-32);
+}
+
 /* ********** ********** ********** ********** Main ********** ********** ********** ********** */
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Ready");
+  Serial.println(F("Ready"));
 }
 
 void loop() {
@@ -75,22 +103,28 @@ void loop() {
   // readBytesUntil does not include the \n in the resulting buffer.
   const size_t buf_len = Serial.readBytesUntil('\n', buffer, MAIN_BUF_SZ-1);
   if (!buf_len) return;
-  buffer[buf_len] = '\0';
+  if (!hex_decode(buffer+1, buf_len-1)) {
+    Serial.println(F("Hex decode failed"));
+    return;
+  }
 
   switch(buffer[0]) {
     case 'z':
-      z85_test(buffer+1, buf_len-1);
+      z85_test(buffer+1, (buf_len-1)/2);
       break;
     case 'c':
-      as128_enc_test(buffer+1, buf_len-1);
+      as128_enc_z85_test(buffer+1, (buf_len-1)/2);
+      break;
+    case 'e':
+      as128_enc_test(buffer+1, (buf_len-1)/2);
       break;
     case 'd':
-      as128_dec_test(buffer+1, buf_len-1);
+      as128_dec_test(buffer+1, (buf_len-1)/2);
       break;
     default:
-      Serial.print("0x");
+      Serial.print(F("0x"));
       Serial.print(buffer[0], HEX);
-      Serial.println(": Unrecognized command");
+      Serial.println(F(": Unrecognized command"));
   }
 
 }
