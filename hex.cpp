@@ -33,3 +33,13 @@ void hex_encode(uint8_t* buffer, size_t len) {
     buffer[len*2+1] = _hex_dig( b       & 0xF);
   }
 }
+
+// This implementation is tested via `test.py` in this repository.
+
+void hex_print(Print &out, const uint8_t* buffer, const size_t len) {
+  for (size_t i=0; i<len; i++) {
+    const uint8_t b = buffer[i];
+    out.write(_hex_dig((b >> 4) & 0xF));
+    out.write(_hex_dig( b       & 0xF));
+  }
+}

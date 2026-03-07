@@ -24,11 +24,16 @@
 
 const size_t MAIN_BUF_SZ = 320;
 
-/* ********** ********** Z85 Test ********** ********** */
+/* ********** ********** Hex & Z85 Test ********** ********** */
+
+void hex_test(const uint8_t* buffer, const size_t len) {
+  hex_print(Serial, buffer, len);
+  Serial.println();
+}
 
 void z85_test(const uint8_t* buffer, const size_t len) {
   z85_print(Serial, buffer, len);
-  Serial.write('\n');
+  Serial.println();
 }
 
 /* ********** ********** ********** ********** Ascon-128 Tests ********** ********** ********** ********** */
@@ -47,7 +52,7 @@ const uint8_t* next_iv() {
 
 void as128_enc_z85_test(const uint8_t* buffer, const size_t len) {
   as128_encrypt_print_z85(Serial, SECRET, next_iv(), buffer, len);
-  Serial.write('\n');
+  Serial.println();
 }
 
 const size_t BUF2_SZ = MAIN_BUF_SZ/2-16;
@@ -109,6 +114,9 @@ void loop() {
   }
 
   switch(buffer[0]) {
+    case 'h':
+      hex_test(buffer+1, (buf_len-1)/2);
+      break;
     case 'z':
       z85_test(buffer+1, (buf_len-1)/2);
       break;

@@ -12,6 +12,16 @@ import ascon   # type: ignore[import-untyped]
 # spell: ignore baudrate
 
 
+def do_hex_test(ser: serial.Serial):
+    for t in ('aB', '0123', 'dEadBeeF'):
+        ser.write(b'h' + t.encode('ASCII') + b'\n')
+        rx = ser.readline().rstrip(b'\r\n')
+        exp = t.lower().encode('ASCII')
+        if rx != exp:
+            raise RuntimeError(f"{t=}: {rx=} != {exp=}")
+        print(f"OK {t} {rx.decode('ASCII')}")
+
+
 def do_z85_test(ser: serial.Serial):
     for length in range(6):
         for combo in product((0, 1, 128, 255), repeat=length):
@@ -115,6 +125,7 @@ def main():
         print("Waiting for boot...")
         if not ser.read_until(b'Ready\r\n').endswith(b'Ready\r\n'):
             raise RuntimeError('Failed to get "Ready" from Arduino')
+        do_hex_test(ser)
         do_z85_test(ser)
         do_encrypt_test(ser)
         do_encrypt_z85_test(ser)

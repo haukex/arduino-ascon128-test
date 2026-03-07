@@ -11,3 +11,6 @@ bool hex_decode(uint8_t* buffer, size_t len);
  * **WARNING:** The actual size of the available memory in the buffer *must*
  * be at least ``len*2``, and this is the length of the resulting buffer. */
 void hex_encode(uint8_t* buffer, size_t len);
+
+/** Prints the buffer as a string of hex characters. */
+void hex_print(Print &out, const uint8_t* buffer, size_t len);
