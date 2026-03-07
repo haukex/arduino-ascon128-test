@@ -2,7 +2,7 @@
 
 // This implementation is tested against Python's `base64.z85encode` via `test.py` in this repository.
 
-static const uint8_t _z85_tbl[] = "0123456789abcdefghijklmnopqrstuvwxyz"
+static const uint8_t _z85_tbl[] PROGMEM = "0123456789abcdefghijklmnopqrstuvwxyz"
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
 
 void z85_print(Print &out, const uint8_t* buffer, const size_t len) {
@@ -13,14 +13,14 @@ void z85_print(Print &out, const uint8_t* buffer, const size_t len) {
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
     n = __builtin_bswap32(n);  // Arduino is little-endian, Z85 uses big-endian
 #elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-    // nothing needed, already big-endian
+#error "Big endian unsupported - I don't have a big-endian system to test on"
 #else
 #error "Endianness unknown"
 #endif
-                out.write(_z85_tbl[(n / 52200625) % 85]);
-                out.write(_z85_tbl[(n / 614125  ) % 85]);
-    if (left>1) out.write(_z85_tbl[(n / 7225    ) % 85]);
-    if (left>2) out.write(_z85_tbl[(n / 85      ) % 85]);
-    if (left>3) out.write(_z85_tbl[ n             % 85]);
+                out.write(pgm_read_byte(_z85_tbl + (n / 52200625) % 85 ));
+                out.write(pgm_read_byte(_z85_tbl + (n / 614125  ) % 85 ));
+    if (left>1) out.write(pgm_read_byte(_z85_tbl + (n / 7225    ) % 85 ));
+    if (left>2) out.write(pgm_read_byte(_z85_tbl + (n / 85      ) % 85 ));
+    if (left>3) out.write(pgm_read_byte(_z85_tbl +  n             % 85 ));
   }
 }

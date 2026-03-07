@@ -23,13 +23,13 @@ bool hex_decode(uint8_t* buffer, const size_t len) {
 
 // This implementation is tested as part of the Ascon-128 decryption test in this repository.
 
-//TODO Later: Is is possible to put this (and _z85_tbl) into PROGMEM? currently fails on both uCs if I try
-static const uint8_t _hex_tbl[] = "0123456789abcdef";
+static inline uint8_t _hex_dig(uint8_t nib)
+  { return nib < 10 ? '0' + nib : 'a' + nib - 10; }
 
 void hex_encode(uint8_t* buffer, size_t len) {
   while (len--) {
     const uint8_t b = buffer[len];
-    buffer[len*2] = _hex_tbl[(b >> 4) & 0xF];
-    buffer[len*2+1] = _hex_tbl[b & 0xF];
+    buffer[len*2]   = _hex_dig((b >> 4) & 0xF);
+    buffer[len*2+1] = _hex_dig( b       & 0xF);
   }
 }
