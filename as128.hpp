@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
-/** This function encrpyts the given buffer using the Ascon-128 algorithm.
+/** This function encrypts the given buffer using the Ascon-128 algorithm.
  * The IV is used as the "associated data" (unencrypted but checksummed data).
  * The ``output`` buffer **MUST** hold at least ``len+16`` bytes, and this is
- * also the size of the resulting output buffer. Don't forget to tranmit the
+ * also the size of the resulting output buffer. Don't forget to transmit the
  * IV (associated data) to the receiver before transmitting the encrypted output. */
 void as128_encrypt(const uint8_t secret[16], const uint8_t iv[16], const uint8_t* buffer, size_t len, uint8_t* output);
 

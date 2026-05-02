@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-/** This function encrpyts the given buffer using the Ascon-128 algorithm.
+/** This function encrypts the given buffer using the Ascon-128 algorithm.
  * The IV is used as the "associated data" (unencrypted but checksummed data).
  * The result is directly written to the given stream with the Z85 encoding.
  * This is an alternative to ``as128_encrypt`` for memory-constrained systems. */
