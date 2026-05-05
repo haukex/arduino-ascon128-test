@@ -20,9 +20,10 @@
  * An analysis of this code reveals that, other than the variables that can be seen throughout the
  * code, two other major contributors to the RAM usage are Serial with 157 bytes and RNG from the
  * Crypto module with 148 bytes - though I haven't yet been able to trace why the latter is needed.
+ * Update: RNG and its dependencies can be safely deleted from the Crypto library.
  */
 
-const size_t MAIN_BUF_SZ = 320;
+constexpr size_t MAIN_BUF_SZ = 320;
 
 /* ********** ********** Hex & Z85 Test ********** ********** */
 
@@ -55,7 +56,7 @@ void as128_enc_z85_test(const uint8_t* buffer, const size_t len) {
   Serial.println();
 }
 
-const size_t BUF2_SZ = MAIN_BUF_SZ/2-16;
+constexpr size_t BUF2_SZ = MAIN_BUF_SZ/2-16;
 static uint8_t buf2[BUF2_SZ];
 
 void _write_buf2(const uint8_t iv[16], const size_t len) {

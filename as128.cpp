@@ -4,7 +4,7 @@
  * See the `install_deps.py` script in this repo for installation. */
 #include <Ascon128.h>
 
-// These implementations are tested against Python's `ascon` via `test.py` in this repository.
+// These implementations are tested against Python's `ascon` via: https://github.com/haukex/arduino-ascon128-test/blob/main/test.py
 
 static Ascon128 cipher;  // uses approx. 60 bytes
 // https://github.com/rweather/arduinolibs/blob/37a76b8f/libraries/CryptoLW/src/Ascon128.h#L52

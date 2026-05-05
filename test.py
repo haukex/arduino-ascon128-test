@@ -120,11 +120,13 @@ def do_decrypt_test(ser: serial.Serial):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('port', help="The serial port to use")
+    parser.add_argument('-W', '--no-wait', help="don't wait for boot message", action="store_true")
     args = parser.parse_args()
     with serial.Serial(port=args.port, baudrate=115200, timeout=5) as ser:
-        print("Waiting for boot...")
-        if not ser.read_until(b'Ready\r\n').endswith(b'Ready\r\n'):
-            raise RuntimeError('Failed to get "Ready" from Arduino')
+        if not args.no_wait:
+            print("Waiting for boot...")
+            if not ser.read_until(b'Ready\r\n').endswith(b'Ready\r\n'):
+                raise RuntimeError('Failed to get "Ready" from Arduino')
         do_hex_test(ser)
         do_z85_test(ser)
         do_encrypt_test(ser)

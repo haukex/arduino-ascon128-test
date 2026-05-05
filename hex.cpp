@@ -7,7 +7,7 @@ static int8_t _hex_nib2int(uint8_t c) {
   return -1;
 }
 
-// This implementation is tested as part several other tests in this repository.
+// This implementation is tested as part several other tests.
 
 bool hex_decode(uint8_t* buffer, const size_t len) {
   if (len%2) return false;
@@ -21,7 +21,7 @@ bool hex_decode(uint8_t* buffer, const size_t len) {
   return true;
 }
 
-// This implementation is tested as part of the Ascon-128 decryption test in this repository.
+// This implementation is tested as part of the Ascon-128 decryption test.
 
 static inline uint8_t _hex_dig(uint8_t nib)
   { return nib < 10 ? '0' + nib : 'a' + nib - 10; }
@@ -34,7 +34,7 @@ void hex_encode(uint8_t* buffer, size_t len) {
   }
 }
 
-// This implementation is tested via `test.py` in this repository.
+// This implementation is tested via: https://github.com/haukex/arduino-ascon128-test/blob/main/test.py
 
 void hex_print(Print &out, const uint8_t* buffer, const size_t len) {
   for (size_t i=0; i<len; i++) {
