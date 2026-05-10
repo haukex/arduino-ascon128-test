@@ -33,6 +33,10 @@ def do_z85_test(ser: serial.Serial):
             exp = z85encode(t)
             if rx != exp:
                 raise RuntimeError(f"{t=}: {rx=} != {exp=}")
+            # Test statement from documentation `len + (len + 3) / 4`
+            exp_len = len(t) + (len(t) + 3) // 4
+            if len(rx) != exp_len:
+                raise RuntimeError(f"{len(rx)} != {exp_len}")
             print(f"OK {t.hex()} {rx.decode('ASCII')}")
 
 
@@ -97,6 +101,10 @@ def do_encrypt_z85_test(ser: serial.Serial):
         rx = ser.readline().rstrip(b'\r\n')
         if len(rx) < 40:
             raise ValueError(f"data too short: {rx!r}")
+        # Test statement from documentation `len + 32 + (len + 35) / 4`
+        exp_len = len(t) + 32 + (len(t) + 35) // 4
+        if len(rx) != exp_len:
+            raise RuntimeError(f"{len(rx)} != {exp_len}")
         _check_enc(t, rx, z85decode(rx[:20]), z85decode(rx[20:-20]),
                    z85decode(rx[-20:]))
 
@@ -120,7 +128,8 @@ def do_decrypt_test(ser: serial.Serial):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('port', help="The serial port to use")
-    parser.add_argument('-W', '--no-wait', help="don't wait for boot message", action="store_true")
+    parser.add_argument('-W', '--no-wait', help="don't wait for boot message",
+                        action="store_true")
     args = parser.parse_args()
     with serial.Serial(port=args.port, baudrate=115200, timeout=5) as ser:
         if not args.no_wait:

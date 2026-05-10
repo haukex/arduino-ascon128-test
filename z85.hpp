@@ -6,6 +6,9 @@
  * (This is the same as the ``z85encode`` and ``z85decode`` functions provided by Python's
  * ``base64`` module as of Python 3.13.)
  *
+ * The number of bytes written to the output is ``len + (len + 3) / 4`` (assuming integer
+ * arithmetic).
+ *
  * References:
  * - https://rfc.zeromq.org/spec/32/
  * - https://github.com/zeromq/rfc/blob/master/src/spec_32.c
